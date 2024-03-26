@@ -1,4 +1,8 @@
-#[derive(Debug, Clone)]
+use serde::{Deserialize, Serialize};
+use std::fs::{File, OpenOptions};
+use std::io::{self, stdin, stdout, Read, Write};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct Note {
     title: String,
     content: String,
@@ -11,29 +15,60 @@ impl Note {
 }
 
 fn main() {
-    let mut notes: Vec<Note> = Vec::new();
+    let mut notes = match load_notes() {
+        Ok(notes) => notes,
+        Err(_) => Vec::new(),
+    };
 
-    add_note(
-        &mut notes,
-        "My first note".to_string(),
-        "This is content for the first note".to_string(),
-    );
-    add_note(
-        &mut notes,
-        "My second note".to_string(),
-        "This is content for the second note".to_string(),
-    );
+    loop {
+        println!("Enter command (Add, List, View, Delete, Exit):");
+        let mut command = String::new();
+        stdin()
+            .read_line(&mut command)
+            .expect("Failed to read line");
 
-    // List all notes
-    list_notes(&notes);
+        match command.trim().to_lowercase().as_str() {
+            "add" => {
+                let title = promt_user_for_input("Enter note title");
+                let content = promt_user_for_input("Enter note content");
 
-    // View specific note
-    view_note(&notes, "My first note");
+                add_note(&mut notes, title, content)
+            }
+            "list" => list_notes(&notes),
+            "view" => {
+                let title = promt_user_for_input("Enter note title");
+                view_note(&notes, &title)
+            }
+            "delete" => {
+                let title = promt_user_for_input("Enter note title");
 
-    // Delete note
-    delete_note(&mut notes, "My first note");
+                delete_note(&mut notes, &title)
+            }
+            "exit" => {
+                println!("Exiting and saving notes...");
+                if let Err(e) = save_notes(&notes) {
+                    println!("Error saving notes {}", e)
+                }
+                break;
+            }
+            _ => println!("Unknown command"),
+        }
+    }
 
-    list_notes(&notes);
+    if let Err(e) = save_notes(&notes) {
+        println!("Error saving notes: {}", e);
+    }
+}
+
+fn promt_user_for_input(message: &str) -> String {
+    print!("{}:", message);
+    stdout().flush().expect("Failed to flush stdout");
+
+    let mut input = String::new();
+
+    stdin().read_line(&mut input).expect("Failed to read line");
+
+    input.trim().to_string()
 }
 
 fn add_note(notes: &mut Vec<Note>, title: String, content: String) {
@@ -61,5 +96,32 @@ fn delete_note(notes: &mut Vec<Note>, title: &str) {
         notes.remove(index);
     } else {
         println!("Note not found")
+    }
+}
+
+fn save_notes(notes: &[Note]) -> io::Result<()> {
+    let file = File::create("notes.json")?;
+    serde_json::to_writer(file, &notes)?;
+    Ok(())
+}
+
+fn load_notes() -> io::Result<Vec<Note>> {
+    let file = OpenOptions::new().read(true).open("notes.json");
+
+    match file {
+        Ok(mut file) => {
+            let mut contents = String::new();
+            file.read_to_string(&mut contents)?;
+            let notes: Vec<Note> = serde_json::from_str(&contents)?;
+            Ok(notes)
+        }
+
+        Err(e) => {
+            if e.kind() == io::ErrorKind::NotFound {
+                Ok(Vec::new())
+            } else {
+                Err(e)
+            }
+        }
     }
 }
