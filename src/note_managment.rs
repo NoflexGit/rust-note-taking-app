@@ -4,16 +4,21 @@ use serde::{Deserialize, Serialize};
 pub struct Note {
     pub title: String,
     pub content: String,
+    tags: Vec<String>,
 }
 
 impl Note {
-    pub fn new(title: String, content: String) -> Note {
-        Note { title, content }
+    pub fn new(title: String, content: String, tags: Vec<String>) -> Note {
+        Note {
+            title,
+            content,
+            tags,
+        }
     }
 }
 
-pub fn add_note(notes: &mut Vec<Note>, title: String, content: String) {
-    let note = Note::new(title, content);
+pub fn add_note(notes: &mut Vec<Note>, title: String, content: String, tags: Vec<String>) {
+    let note = Note::new(title, content, tags);
 
     notes.push(note)
 }
@@ -22,6 +27,13 @@ pub fn list_notes(notes: &[Note]) {
     for note in notes {
         println!("{}", note.title);
     }
+}
+
+pub fn filter_by_tag<'a>(notes: &'a [Note], tag: &str) -> Vec<&'a Note> {
+    notes
+        .iter()
+        .filter(|note| note.tags.contains(&tag.to_string()))
+        .collect()
 }
 
 pub fn view_note(notes: &[Note], title: &str) {
