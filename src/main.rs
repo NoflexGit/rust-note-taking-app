@@ -62,7 +62,29 @@ fn main() {
                     }
                 }
             }
-            _ => println!("Unknown command"),
+            "add tag" => {
+                let title = promt_user_for_input("Enter the title of the note to add a tag to");
+                let tag = promt_user_for_input("Enter the tag to add");
+
+                if let Some(note) = notes.iter_mut().find(|n| n.title == title) {
+                    note.add_tag(tag);
+                    println!("Tag added.")
+                } else {
+                    println!("Note not found.");
+                }
+            }
+            "remove tag" => {
+                let title = promt_user_for_input("Enter the title of the not to remove tag from");
+                let tag = promt_user_for_input("Enter the tag to remove");
+
+                if let Some(note) = notes.iter_mut().find(|n| n.title == title) {
+                    note.remove_tag(&tag);
+                    println!("Tag removed.")
+                } else {
+                    println!("Note not found.")
+                }
+            }
+            _ => println!("Unknown command."),
         }
     }
 

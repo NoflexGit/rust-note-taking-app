@@ -15,6 +15,20 @@ impl Note {
             tags,
         }
     }
+
+    pub fn add_tag(&mut self, tag: String) {
+        if !self.tags.contains(&tag) {
+            self.tags.push(tag)
+        }
+    }
+
+    pub fn remove_tag(&mut self, tag: &str) -> bool {
+        if let Some(index) = self.tags.iter().position(|t| t == tag) {
+            self.tags.remove(index);
+            return true;
+        }
+        false
+    }
 }
 
 pub fn add_note(notes: &mut Vec<Note>, title: String, content: String, tags: Vec<String>) {
